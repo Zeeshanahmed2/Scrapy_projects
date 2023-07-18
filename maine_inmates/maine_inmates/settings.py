@@ -13,7 +13,7 @@ SPIDER_MODULES = ['maine_inmates.spiders']
 NEWSPIDER_MODULE = 'maine_inmates.spiders'
 
 ITEM_PIPELINES = {
-    'maine_inmates.pipelines.DatabasePipeline': 300,  # Adjust the priority as needed
+    'maine_inmates.pipeline.DatabasePipeline': 300,  # Adjust the priority as needed
 }
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -63,10 +63,10 @@ ROBOTSTXT_OBEY = True
 #    'scrapy.extensions.telnet.TelnetConsole': None,
 #}
 
-# Configure item pipelines
+# Configure item pipeline
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 #ITEM_PIPELINES = {
-#    'maine_inmates.pipelines.MaineInmatesPipeline': 300,
+#    'maine_inmates.pipeline.MaineInmatesPipeline': 300,
 #}
 
 # Enable and configure the AutoThrottle extension (disabled by default)

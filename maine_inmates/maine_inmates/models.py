@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy import Column, BigInteger, String, DateTime, ForeignKey
 
 Base = declarative_base()
 
@@ -17,12 +18,19 @@ class InmateModel(Base):
     birthdate = Column(String)
     sex = Column(String)
     race = Column(String)
+    md5_hash = Column(String)
     data_source_url = Column(String)
+    arrests = relationship("ArrestsModel", back_populates="inmate")
 
-#     arrests_table_id = Column(Integer, ForeignKey('table_b.id'))
-#     arrests_table = relationship('TableB')
-#
-# class ArrestsModel(Base):
-#     __tablename__ = 'maine_arrests'
-#     id = Column(Integer, primary_key=True)
-#     value = Column(String)
+
+class ArrestsModel(Base):
+    __tablename__ = 'maine_arrests'
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    inmate_id = Column(BigInteger, ForeignKey('maine_inmates.id'))
+    status = Column(String(255))
+    officer = Column(String(255))
+    booking_agency = Column(String(255))
+    md5_hash = Column(String)
+    data_source_url = Column(String(255))
+    inmate = relationship("InmateModel", back_populates="arrests")
+

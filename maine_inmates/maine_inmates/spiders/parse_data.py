@@ -1,4 +1,5 @@
 from datetime import datetime
+import hashlib
 
 
 def get_maine_inmates(response, link):
@@ -13,9 +14,20 @@ def get_maine_inmates(response, link):
         'suffix': suffix,
         'birthdate': get_date(birthdate),
         'sex': data_fetcher(response, 'Gender:'),
-        'race': data_fetcher(response, 'Race/Ethnicity:'),
-        'data_source_url': link
+        'race': data_fetcher(response, 'Race/Ethnicity:')
     }
+    data_hash = get_common(data_hash, link)
+    return data_hash
+
+
+def get_arrests_data(response, link):
+    data_hash = {
+        # 'inmate_id': inmate_id,
+        'status': data_fetcher(response, 'Status:'),
+        'officer': data_fetcher(response, 'Adult Community Corrections Client Officer:'),
+        'booking_agency': data_fetcher(response, 'Location(s) and location phone number(s):')
+    }
+    data_hash = get_common(data_hash, link)
     return data_hash
 
 
@@ -82,3 +94,19 @@ def data_fetcher(response, search_text, index=0):
         return values[index].strip()
     else:
         return None
+
+
+def get_common(data_hash, link):
+    data_hash_excluding_url = {key: value for key, value in data_hash.items() if key != 'data_source_url'}
+    common_data = {
+        'md5_hash': create_md5_hash(data_hash_excluding_url),
+        'data_source_url': link
+    }
+    data_hash.update(common_data)
+    return data_hash
+
+
+def create_md5_hash(data_hash):
+    data_string = ''.join(str(val) for val in data_hash.values())
+    md5_hash = hashlib.md5(data_string.encode()).hexdigest()
+    return md5_hash

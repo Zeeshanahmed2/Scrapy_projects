@@ -1,5 +1,8 @@
 import scrapy
-from parse_data import get_maine_inmates
+from scrapy.utils import spider
+
+from parse_data import get_maine_inmates, get_arrests_data
+
 
 # from maine_inmates.items import MaineInmatesItem
 # from maine_inmates.models import Base
@@ -19,35 +22,39 @@ class InmatesSpiderSpider(scrapy.Spider):
     def start_requests(self):
         yield scrapy.Request(self.start_url, callback=self.parse, dont_filter=True)
 
-    def parse(self, response):
+    def parse(self, response, **kwargs):
         yield scrapy.Request(
             url=self.BASE_URL + 'search.pl?Search=Continue',
             headers=self.get_headers(),
             body=self.get_search_body(),
             method='POST',
             callback=self.parse_results,
-            dont_filter=True
+            dont_filter=True,
+            meta={'page': 1}
         )
 
     def parse_results(self, response):
         cookie = response.headers.get('Set-Cookie').decode('utf-8')
-        ids = response.css('table.at-data-table a::attr(href)').extract()
+        ids = list(dict.fromkeys(response.css('table.at-data-table a::attr(href)').extract()))
         for id in ids:
             yield scrapy.Request(
                 url=self.BASE_URL + id,
                 headers=self.get_headers(cookie),
                 callback=self.parse_inner_pages,
-                dont_filter=True
+                dont_filter=True,
+                meta={'cookie': cookie}
             )
 
         next_url = response.css('a:contains("Next 30 results")::attr(href)').get()
-        if (next_url is not None) and (next_url != response.request.url):
+        if next_url is not None:
             print(f"======================================{next_url}=======================================")
+            next_page = response.meta['page'] + 1
             yield scrapy.Request(
                 url=self.BASE_URL + next_url,
                 headers=self.get_headers(cookie),
                 callback=self.parse_results,
-                dont_filter=True
+                dont_filter=True,
+                meta={'page': next_page}
             )
             return
         else:
@@ -71,6 +78,8 @@ class InmatesSpiderSpider(scrapy.Spider):
 
     def parse_inner_pages(self, response):
         link = response.url
-        inmates_data_hash = get_maine_inmates(response, link)
-        # inmate_item = MaineInmatesItem(**inmates_data_hash)
-        yield inmates_data_hash
+        item = {
+            "inmates_data_hash": get_maine_inmates(response, link),
+            "arrests_data_hash": get_arrests_data(response, link)
+        }
+        yield item
